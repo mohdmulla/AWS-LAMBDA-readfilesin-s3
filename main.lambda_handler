@@ -1,0 +1,45 @@
+## So before we get started let me remind you to do this code in your local system and import the libraries as its not well supported by AWS so it has to be done manually.
+
+import pymysql
+import boto3
+
+
+# MYSQL DETAILS 
+
+REGION = <enter your region>
+rds_host  = <your MYSQL end point>
+name = "user-name"
+password = "mysql password"
+db_name = "database-name"
+
+
+
+def lambda_handler(event,content):
+
+# so this function is triggered everytime a file is uploaded in this s3 bucket. 
+# please include a s3 trigger with your lambda function and connect with the bucket respectively.
+
+    print(str(event))
+    master_bucket = event['Records'][0]['s3']['bucket']['name']
+    json_filename = event['Records'][0]['s3']['object']['key']
+    print(master_bucket)
+    print(json_filename)
+
+#so the information required is collected above. 
+#below the write function has been added.
+
+    result = []
+    conn = pymysql.connect(rds_host, user=name, passwd=password, db=db_name, connect_timeout=5)
+    with conn.cursor() as cur:
+        sql = (""" INSERT INTO `BUCKET_OBJECTS` (`id`, `bname`, `fname`) VALUES (%s,%s,%s)""")
+        val = ("null",master_bucket,json_filename)
+        cur.execute(sql,val)
+        cur.execute("""select * from BUCKET_OBJECTS""")
+        conn.commit()
+        cur.close()
+        for row in cur:
+            result.append(list(row))
+        print ("Data from RDS...")
+        print (result)
+        
+    return "thank you"
